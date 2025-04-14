@@ -1,0 +1,29 @@
+logging:
+  level: "INFO"
+  file: "logs/traffic_system.log"
+
+traffic:
+  lane_divisions: 3
+  min_green_time: 10
+  yellow_duration: 3
+  red_duration: 2
+
+cameras:
+  urls:
+    - "0"  # Use local webcam for testing
+    - "http://192.168.1.3:8080/video"
+    # - "rtsp://username:password@192.168.1.100:554/stream1"  # Example IP camera
+
+detection:
+  model_path: "yolov8n.pt"
+  speed_limit: 50
+
+prediction:
+  update_interval: 60
+
+incidents:
+  stopped_threshold: 10
+  congestion_threshold: 0.7
+
+system:
+  worker_threads: 2
