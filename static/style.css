@@ -1,0 +1,114 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    width: 80%;
+    margin: 20px auto;
+    padding: 20px;
+    background: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    font-size: 2em;
+    color: #333;
+}
+
+nav ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+nav ul li {
+    display: inline;
+    margin-right: 10px;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
+}
+
+nav ul li a:hover {
+    color: #007bff;
+}
+
+.status-box {
+    margin: 20px 0;
+    padding: 20px;
+    border: 2px solid #333;
+}
+
+.light-status {
+    margin: 10px 0;
+    padding: 8px;
+    width: 200px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.light-status.red {
+    background-color: #f44336;
+    color: #fff;
+}
+
+.light-status.yellow {
+    background-color: #ffeb3b;
+    color: #000;
+}
+
+.light-status.green {
+    background-color: #4caf50;
+    color: #fff;
+}
+
+.camera-feeds {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.camera-feed {
+    border: 2px solid #333;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.camera-feed img {
+    width: 100%;
+    height: auto;
+}
+
+.incidents, .predictions {
+    margin: 20px 0;
+    padding: 20px;
+    border: 2px solid #333;
+}
+
+.incident-item, .prediction-item {
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+}
+
+.incident-item.active {
+    background-color: #ffeb3b;
+}
+
+.incident-item.resolved {
+    background-color: #d4edda;
+}
