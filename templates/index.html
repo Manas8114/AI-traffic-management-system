@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Monitoring System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Traffic Monitoring System</h1>
+            <nav>
+                <ul>
+                    <li><a href="#traffic-lights">Traffic Lights</a></li>
+                    <li><a href="#cameras">Cameras</a></li>
+                    <li><a href="#incidents">Incidents</a></li>
+                    <li><a href="#predictions">Predictions</a></li>
+                </ul>
+            </nav>
+        </header>
+        <main>
+            <section id="traffic-lights">
+                <h2>Traffic Light Status</h2>
+                <div id="traffic-lights-container" class="status-box"></div>
+            </section>
+            <section id="cameras">
+                <h2>Camera Feeds</h2>
+                <div id="camera-feeds-container" class="camera-feeds"></div>
+            </section>
+            <section id="incidents">
+                <h2>Incidents</h2>
+                <div id="incidents-container" class="incidents"></div>
+            </section>
+            <section id="predictions">
+                <h2>Traffic Predictions</h2>
+                <div id="predictions-container" class="predictions"></div>
+            </section>
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+</body>
+</html>
