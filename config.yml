@@ -11,7 +11,7 @@ traffic:
 cameras:
   urls:
     - "0"  # Use local webcam for testing
-    - "http://192.168.1.3:8080/video"
+    - "http://192.0.0.4:8080/video"
     # - "rtsp://username:password@192.168.1.100:554/stream1"  # Example IP camera
 
 detection:

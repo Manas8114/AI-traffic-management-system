@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Traffic Management System</title>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 5px;
+            color: #ffffff;
+        }
+
+        .subtitle {
+            color: #a0a0a0;
+            font-size: 16px;
+            margin-bottom: 2px;
+        }
+
+        .subtext {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .lanes-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .lane-column {
+            flex: 1;
+        }
+
+        .traffic-signal {
+            background-color: rgba(40, 44, 52, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+
+        .signal-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .signal-box {
+            background-color: rgba(25, 26, 30, 0.7);
+            border-radius: 12px;
+            width: 120px;
+            height: 260px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #444;
+        }
+
+        .signal {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.5s ease;
+        }
+
+        .signal .inner-circle {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #fff;
+            opacity: 0.7;
+        }
+
+        .red {
+            background-color: #550000;
+        }
+
+        .green {
+            background-color: #005500;
+        }
+
+        .red.active {
+            background-color: #ff0000;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.7);
+        }
+
+        .green.active {
+            background-color: #00ff00;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.7);
+        }
+
+        .video-section {
+            background-color: rgba(40, 44, 52, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #333;
+        }
+
+        .video-title {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .video-display {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    background-color: #1a1a1a;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    cursor: pointer;
+    border: 1px solid #333;
+}
+
+        .upload-icon {
+            font-size: 36px;
+            margin-bottom: 15px;
+            color: #666;
+        }
+
+        .upload-text {
+            font-size: 18px;
+            color: #ffffff;
+            margin-bottom: 5px;
+        }
+
+        .upload-subtext {
+            font-size: 14px;
+            color: #888;
+        }
+
+        video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background-color: #000;
+}
+
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Allow clicks to pass through to video controls */
+}
+
+/* Add these new styles for video controls */
+.video-controls {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+.video-controls button {
+    padding: 8px 15px;
+    background-color: #444;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.video-controls button:hover {
+    background-color: #555;
+}
+
+        .file-input {
+            display: none;
+        }
+
+        .detection-status {
+            padding: 8px 12px;
+            background-color: rgba(30, 30, 30, 0.8);
+            border-radius: 4px;
+            font-weight: bold;
+            text-align: center;
+            color: #ddd;
+            border: 1px solid #444;
+        }
+
+        .logs {
+            background-color: rgba(40, 44, 52, 0.8);
+            padding: 20px;
+            border-radius: 12px;
+            height: 200px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+
+        .logs h3 {
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        #log-messages {
+            line-height: 1.5;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 8px;
+            border-radius: 4px;
+            background-color: rgba(30, 30, 30, 0.5);
+            border-left: 3px solid #555;
+        }
+
+        .emergency {
+            color: #ff5555;
+            font-weight: bold;
+            border-left-color: #ff5555;
+        }
+
+        .violation {
+            color: #ffaa55;
+            font-weight: bold;
+            border-left-color: #ffaa55;
+        }
+
+        .settings {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: rgba(40, 44, 52, 0.8);
+            border-radius: 12px;
+            border: 1px solid #333;
+        }
+
+        .settings h3 {
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .settings label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+
+        .settings input {
+            margin-bottom: 15px;
+            padding: 10px;
+            width: 100%;
+            background-color: #333;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #fff;
+        }
+
+        .settings input:focus {
+            outline: none;
+            border-color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI Traffic Management System</h1>
+            <div class="subtitle">Intelligent traffic control with YOLO detection and LSTM analysis</div>
+            <div class="subtext">Using Twilio for emergency notifications</div>
+        </header>
+
+        <div class="lanes-container">
+            <!-- Lane 1 -->
+            <div class="lane-column">
+                <div class="traffic-signal">
+                    <div class="signal-title">Lane 1</div>
+                    <div class="signal-box">
+                        <div class="signal red active" id="lane1-red">
+                            <div class="inner-circle"></div>
+                        </div>
+                        <div class="signal green" id="lane1-green">
+                            <div class="inner-circle"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="video-section">
+                    <div class="video-title">Lane 1 Video</div>
+                    <label for="lane1-video" class="video-display" id="lane1-upload-area">
+                        <div class="upload-icon">⬆️</div>
+                        <div class="upload-text">Upload Video</div>
+                        <div class="upload-subtext">Click to upload a traffic video</div>
+                        <input type="file" id="lane1-video" class="file-input" accept="video/*">
+                    </label>
+                    <video id="lane1-video-player" style="display:none" controls></video>
+                    <canvas id="lane1-canvas" style="display:none" width="400" height="300"></canvas>
+                    <div class="detection-status" id="lane1-status">No detection</div>
+                </div>
+            </div>
+
+            <!-- Lane 2 -->
+            <div class="lane-column">
+                <div class="traffic-signal">
+                    <div class="signal-title">Lane 2</div>
+                    <div class="signal-box">
+                        <div class="signal red" id="lane2-red">
+                            <div class="inner-circle"></div>
+                        </div>
+                        <div class="signal green active" id="lane2-green">
+                            <div class="inner-circle"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="video-section">
+                    <div class="video-title">Lane 2 Video</div>
+                    <label for="lane2-video" class="video-display" id="lane2-upload-area">
+                        <div class="upload-icon">⬆️</div>
+                        <div class="upload-text">Upload Video</div>
+                        <div class="upload-subtext">Click to upload a traffic video</div>
+                        <input type="file" id="lane2-video" class="file-input" accept="video/*">
+                    </label>
+                    <video id="lane2-video-player" style="display:none" controls></video>
+                    <canvas id="lane2-canvas" style="display:none" width="400" height="300"></canvas>
+                    <div class="detection-status" id="lane2-status">No detection</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="logs">
+            <h3>System Logs</h3>
+            <div id="log-messages"></div>
+        </div>
+
+        <div class="settings">
+            <h3>System Settings</h3>
+            <label for="emergency-contact">Emergency Contact:</label>
+            <input type="text" id="emergency-contact" placeholder="+1234567890" value="+1234567890">
+
+            <label for="violation-threshold">Non-moving Vehicle Threshold (seconds):</label>
+            <input type="number" id="violation-threshold" min="1" max="30" value="5">
+        </div>
+    </div>
+
+    <script>
+        // TrafficDetector Class - Simulates YOLOv8 detection
+        class TrafficDetector {
+            constructor() {
+                this.model = null;
+                this.classes = [
+                    'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat',
+                    'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat',
+                    'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack',
+                    'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
+                    'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
+                    'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple',
+                    'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair',
+                    'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse',
+                    'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator',
+                    'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush', 'ambulance'
+                ];
+                this.emergencyVehicles = ['ambulance', 'fire truck', 'police car'];
+                this.vehicleClasses = ['car', 'bus', 'truck', 'motorcycle', 'ambulance'];
+                this.nonMovingVehicles = {};
+            }
+
+            async loadModel() {
+                try {
+                    // In a real implementation, you would load YOLOv8 model
+                    console.log("Loading YOLOv8 model...");
+                    // Simulating model load for demo purposes
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    console.log("Model loaded successfully");
+                    return true;
+                } catch (error) {
+                    console.error("Error loading model:", error);
+                    return false;
+                }
+            }
+
+            async detectObjects(videoElement, canvasElement, laneId) {
+                const ctx = canvasElement.getContext('2d');
+                ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+                // In a real implementation, this would run YOLOv8 inference
+                // For demo purposes, we're simulating detection results
+                const detections = this.simulateDetections(laneId);
+
+                // Draw bounding boxes (comment out this block to remove bounding boxes)
+                /*
+                detections.forEach(detection => {
+                    const { x, y, width, height, class: className, score } = detection;
+
+                    // Draw rectangle
+                    ctx.strokeStyle = this.getColorForClass(className);
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x, y, width, height);
+
+                    // Draw label
+                    ctx.fillStyle = this.getColorForClass(className);
+                    ctx.font = '14px Arial';
+                    ctx.fillText(`${className} ${Math.round(score * 100)}%`, x, y - 5);
+                });
+                */
+
+                return this.analyzeDetections(detections, laneId);
+            }
+
+            simulateDetections(laneId) {
+                // Simulate different scenarios based on laneId for demo
+                const baseDetections = [
+                    { x: 50, y: 100, width: 100, height: 80, class: 'car', score: 0.92 },
+                    { x: 200, y: 150, width: 90, height: 70, class: 'car', score: 0.88 },
+                    { x: 300, y: 120, width: 110, height: 90, class: 'truck', score: 0.85 }
+                ];
+
+                if (laneId === 'lane1') {
+                    baseDetections.push({
+                        x: 150, y: 200, width: 120, height: 90, class: 'ambulance', score: 0.95
+                    });
+                }
+
+                if (laneId === 'lane2') {
+                    baseDetections.push({ x: 120, y: 100, width: 100, height: 80, class: 'car', score: 0.9 });
+                    baseDetections.push({ x: 250, y: 110, width: 90, height: 70, class: 'car', score: 0.85 });
+                }
+
+                return baseDetections;
+            }
+
+            getColorForClass(className) {
+                if (this.emergencyVehicles.includes(className)) {
+                    return 'red';
+                } else if (this.vehicleClasses.includes(className)) {
+                    return '#00aaff';
+                } else {
+                    return '#22cc22';
+                }
+            }
+
+            analyzeDetections(detections, laneId) {
+                const result = {
+                    hasEmergencyVehicle: false,
+                    hasNonMovingVehicle: false,
+                    hasAccident: false
+                };
+
+                // Check for emergency vehicles
+                detections.forEach(detection => {
+                    if (this.emergencyVehicles.includes(detection.class)) {
+                        result.hasEmergencyVehicle = true;
+                    }
+                });
+
+                // Simulate non-moving vehicle detection
+                // In a real implementation, this would track objects across frames
+                const vehicleDetections = detections.filter(d => this.vehicleClasses.includes(d.class));
+
+                if (!this.nonMovingVehicles[laneId]) {
+                    this.nonMovingVehicles[laneId] = {
+                        vehicles: new Map(),
+                        lastFrameTime: Date.now()
+                    };
+                }
+
+                const currentTime = Date.now();
+                const timeDiff = (currentTime - this.nonMovingVehicles[laneId].lastFrameTime) / 1000;
+                this.nonMovingVehicles[laneId].lastFrameTime = currentTime;
+
+                // Simulate vehicle movement/non-movement detection
+                if (Math.random() > 0.8) {
+                    result.hasNonMovingVehicle = true;
+                }
+
+                // Simulate accident detection
+                if (Math.random() > 0.95) {
+                    result.hasAccident = true;
+                }
+
+                return result;
+            }
+        }
+
+        // TwilioService Class - Simulates Twilio API calls
+        class TwilioService {
+            constructor() {
+                this.emergencyContact = document.getElementById('emergency-contact').value;
+            }
+
+            async makeEmergencyCall(message) {
+                try {
+                    this.emergencyContact = document.getElementById('emergency-contact').value;
+                    console.log(`Making emergency call to ${this.emergencyContact} with message: ${message}`);
+                    // In a real implementation, this would call Twilio API
+                    // This is just a simulation
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    return {
+                        success: true,
+                        message: 'Emergency call placed successfully'
+                    };
+                } catch (error) {
+                    console.error('Failed to place emergency call:', error);
+                    return {
+                        success: false,
+                        message: 'Failed to place emergency call'
+                    };
+                }
+            }
+
+            async sendNotification(message) {
+                try {
+                    this.emergencyContact = document.getElementById('emergency-contact').value;
+                    console.log(`Sending notification to ${this.emergencyContact}: ${message}`);
+                    // In a real implementation, this would send an SMS via Twilio API
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    return {
+                        success: true,
+                        message: 'Notification sent successfully'
+                    };
+                } catch (error) {
+                    console.error('Failed to send notification:', error);
+                    return {
+                        success: false,
+                        message: 'Failed to send notification'
+                    };
+                }
+            }
+        }
+
+        // StorageService - Simulates MongoDB storage in browser
+        class StorageService {
+            constructor() {
+                this.violations = [];
+                // Load any existing violations from localStorage
+                try {
+                    const savedViolations = localStorage.getItem('trafficViolations');
+                    if (savedViolations) {
+                        this.violations = JSON.parse(savedViolations);
+                    }
+                } catch (e) {
+                    console.error('Error loading violations from localStorage:', e);
+                }
+            }
+
+            async saveViolation(lane, type, videoData = null) {
+                const violation = {
+                    id: Date.now().toString(),
+                    lane,
+                    type,
+                    timestamp: new Date().toISOString(),
+                    videoData: videoData ? 'video_data_placeholder' : null
+                };
+
+                this.violations.push(violation);
+
+                // Save to localStorage
+                try {
+                    localStorage.setItem('trafficViolations', JSON.stringify(this.violations));
+                } catch (e) {
+                    console.error('Error saving to localStorage:', e);
+                }
+
+                return violation;
+            }
+
+            getViolations() {
+                return this.violations;
+            }
+        }
+
+        // Main application code
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const lane1Red = document.getElementById('lane1-red');
+            const lane1Green = document.getElementById('lane1-green');
+            const lane2Red = document.getElementById('lane2-red');
+            const lane2Green = document.getElementById('lane2-green');
+
+            const lane1VideoInput = document.getElementById('lane1-video');
+            const lane2VideoInput = document.getElementById('lane2-video');
+
+            const lane1VideoPlayer = document.getElementById('lane1-video-player');
+            const lane2VideoPlayer = document.getElementById('lane2-video-player');
+
+            const lane1Canvas = document.getElementById('lane1-canvas');
+            const lane2Canvas = document.getElementById('lane2-canvas');
+
+            const lane1Status = document.getElementById('lane1-status');
+            const lane2Status = document.getElementById('lane2-status');
+
+            const lane1UploadArea = document.getElementById('lane1-upload-area');
+            const lane2UploadArea = document.getElementById('lane2-upload-area');
+
+            const logMessages = document.getElementById('log-messages');
+            const violationThreshold = document.getElementById('violation-threshold');
+
+            // Initialize services
+            const detector = new TrafficDetector();
+            const twilioService = new TwilioService();
+            const storageService = new StorageService();
+
+            // State
+            const state = {
+                lane1: {
+                    signalState: 'red', // 'red' or 'green'
+                    videoPlaying: false,
+                    detectionInterval: null,
+                    nonMovingTimer: 0,
+                    detectionResults: null
+                },
+                lane2: {
+                    signalState: 'green', // 'red' or 'green'
+                    videoPlaying: false,
+                    detectionInterval: null,
+                    nonMovingTimer: 0,
+                    detectionResults: null
+                }
+            };
+
+            // Load YOLOv8 model (simulation)
+            detector.loadModel().then(success => {
+                if (success) {
+                    logMessage('YOLOv8 model loaded successfully');
+                } else {
+                    logMessage('Failed to load YOLOv8 model', 'emergency');
+                }
+            });
+
+            // Initialize by setting lane1 to red and lane2 to green
+            updateSignals('lane1', 'red');
+            updateSignals('lane2', 'green');
+
+            // Event Listeners
+            lane1Red.addEventListener('click', () => handleSignalClick('lane1', 'red'));
+            lane1Green.addEventListener('click', () => handleSignalClick('lane1', 'green'));
+            lane2Red.addEventListener('click', () => handleSignalClick('lane2', 'red'));
+            lane2Green.addEventListener('click', () => handleSignalClick('lane2', 'green'));
+
+            lane1VideoInput.addEventListener('change', (e) => handleVideoUpload(e, 'lane1'));
+            lane2VideoInput.addEventListener('change', (e) => handleVideoUpload(e, 'lane2'));
+
+            lane1VideoPlayer.addEventListener('play', () => startDetection('lane1'));
+            lane1VideoPlayer.addEventListener('pause', () => stopDetection('lane1'));
+            lane1VideoPlayer.addEventListener('ended', () => stopDetection('lane1'));
+
+            lane2VideoPlayer.addEventListener('play', () => startDetection('lane2'));
+            lane2VideoPlayer.addEventListener('pause', () => stopDetection('lane2'));
+            lane2VideoPlayer.addEventListener('ended', () => stopDetection('lane2'));
+
+            // Functions
+            function handleSignalClick(lane, color) {
+                // Cannot set both red and green for the same lane
+                if (state[lane].signalState === color) return;
+
+                // If setting this lane to green, make sure the other lane is red
+                const otherLane = lane === 'lane1' ? 'lane2' : 'lane1';
+
+                if (color === 'green') {
+                    updateSignals(lane, 'green');
+                    updateSignals(otherLane, 'red');
+                } else {
+                    updateSignals(lane, 'red');
+                }
+
+                logMessage(`${lane.toUpperCase()} signal changed to ${color.toUpperCase()}`);
+            }
+
+            function updateSignals(lane, color) {
+                const redButton = document.getElementById(`${lane}-red`);
+                const greenButton = document.getElementById(`${lane}-green`);
+
+                if (color === 'red') {
+                    redButton.classList.add('active');
+                    greenButton.classList.remove('active');
+                    state[lane].signalState = 'red';
+                } else {
+                    redButton.classList.remove('active');
+                    greenButton.classList.add('active');
+                    state[lane].signalState = 'green';
+                }
+            }
+
+            function handleVideoUpload(event, lane) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const videoPlayer = document.getElementById(`${lane}-video-player`);
+                const canvas = document.getElementById(`${lane}-canvas`);
+                const uploadArea = document.getElementById(`${lane}-upload-area`);
+
+                videoPlayer.src = URL.createObjectURL(file);
+
+                videoPlayer.onloadedmetadata = () => {
+                    const duration = videoPlayer.duration;
+                    if (lane === 'lane1' && duration > 22) {
+                        simulateAccidentIfNeeded(lane);
+                    }
+                };
+
+                // Show video player, hide upload area
+                uploadArea.style.display = 'none';
+                videoPlayer.style.display = 'block';
+                canvas.style.display = 'block';
+
+                // Make sure controls are enabled and video is sized correctly
+                videoPlayer.controls = true;
+                videoPlayer.style.width = '100%';
+                videoPlayer.style.height = '100%';
+
+                // Auto play video
+                videoPlayer.play();
+
+                // Add remove/replace buttons if they don't exist yet
+                if (!document.querySelector(`.${lane}-video-controls`)) {
+                    const videoSection = videoPlayer.closest('.video-section');
+                    const controlsDiv = document.createElement('div');
+                    controlsDiv.className = `video-controls ${lane}-video-controls`;
+
+                    const removeButton = document.createElement('button');
+                    removeButton.textContent = 'Remove';
+                    removeButton.onclick = () => removeVideo(lane);
+
+                    const replaceButton = document.createElement('button');
+                    replaceButton.textContent = 'Replace';
+                    replaceButton.onclick = () => document.getElementById(`${lane}-video`).click();
+
+                    controlsDiv.appendChild(removeButton);
+                    controlsDiv.appendChild(replaceButton);
+
+                    videoSection.appendChild(controlsDiv);
+                }
+
+                logMessage(`Video uploaded for ${lane.toUpperCase()}`);
+            }
+
+            // Add this new function for removing videos
+            function removeVideo(lane) {
+                const videoPlayer = document.getElementById(`${lane}-video-player`);
+                const canvas = document.getElementById(`${lane}-canvas`);
+                const uploadArea = document.getElementById(`${lane}-upload-area`);
+                const controlsDiv = document.querySelector(`.${lane}-video-controls`);
+
+                // Clear video source
+                videoPlayer.src = '';
+                videoPlayer.style.display = 'none';
+                canvas.style.display = 'none';
+                uploadArea.style.display = 'flex';
+
+                // Remove controls div if it exists
+                if (controlsDiv) {
+                    controlsDiv.remove();
+                }
+
+                // Stop detection
+                stopDetection(lane);
+
+                logMessage(`Video removed from ${lane.toUpperCase()}`);
+            }
+
+            function startDetection(lane) {
+                const videoPlayer = document.getElementById(`${lane}-video-player`);
+                const canvas = document.getElementById(`${lane}-canvas`);
+                const statusElement = document.getElementById(`${lane}-status`);
+
+                state[lane].videoPlaying = true;
+
+                // Clear any existing detection interval
+                if (state[lane].detectionInterval) {
+                    clearInterval(state[lane].detectionInterval);
+                }
+
+                // Set up detection interval (every 500ms)
+                state[lane].detectionInterval = setInterval(async () => {
+                    if (!state[lane].videoPlaying) return;
+
+                    // Run object detection
+                    const results = await detector.detectObjects(videoPlayer, canvas, lane);
+                    state[lane].detectionResults = results;
+
+                    // Update status display
+                    updateDetectionStatus(lane, results);
+
+                    // Check for emergency vehicles
+                    if (results.hasEmergencyVehicle) {
+                        handleEmergencyVehicle(lane);
+                    }
+
+                    // Check for non-moving vehicles when signal is green
+                    if (state[lane].signalState === 'green' && results.hasNonMovingVehicle) {
+                        state[lane].nonMovingTimer += 0.5; // Add 0.5 seconds
+                        const threshold = parseFloat(violationThreshold.value) || 5;
+
+                        if (state[lane].nonMovingTimer >= threshold) {
+                            handleNonMovingVehicle(lane);
+                            state[lane].nonMovingTimer = 0; // Reset timer
+                        }
+                    } else {
+                        state[lane].nonMovingTimer = 0; // Reset timer if vehicle is moving
+                    }
+
+                    // Check for accidents
+                    if (results.hasAccident) {
+                        handleAccident(lane);
+                    }
+
+                }, 500);
+            }
+
+            function stopDetection(lane) {
+                state[lane].videoPlaying = false;
+
+                if (state[lane].detectionInterval) {
+                    clearInterval(state[lane].detectionInterval);
+                    state[lane].detectionInterval = null;
+                }
+            }
+
+            function updateDetectionStatus(lane, results) {
+                const statusElement = document.getElementById(`${lane}-status`);
+                let statusText = [];
+
+                if (results.hasEmergencyVehicle) {
+                    statusText.push('Emergency Vehicle Detected!');
+                }
+
+                if (results.hasNonMovingVehicle) {
+                    statusText.push(`Non-moving Vehicle (${state[lane].nonMovingTimer.toFixed(1)}s)`);
+                }
+
+                if (results.hasAccident) {
+                    statusText.push('Accident Detected!');
+                }
+
+                if (statusText.length === 0) {
+                    statusText.push('Normal Traffic Flow');
+                }
+
+                statusElement.textContent = statusText.join(' | ');
+            }
+
+            function handleEmergencyVehicle(lane) {
+                // If this lane has a red signal and an emergency vehicle is detected,
+                // switch it to green and the other lane to red
+                if (state[lane].signalState === 'red') {
+                    const otherLane = lane === 'lane1' ? 'lane2' : 'lane1';
+
+                    updateSignals(lane, 'green');
+                    updateSignals(otherLane, 'red');
+
+                    logMessage(`EMERGENCY: Emergency vehicle detected in ${lane.toUpperCase()}. Signal automatically switched to GREEN.`, 'emergency');
+
+                    // Make a simulated emergency call
+                    twilioService.makeEmergencyCall(
+                        `Emergency vehicle detected at ${lane}. Traffic signal automatically changed to allow passage.`
+                    );
+                }
+            }
+
+            function handleNonMovingVehicle(lane) {
+                logMessage(`VIOLATION: Non-moving vehicle detected in ${lane.toUpperCase()} when signal is GREEN for more than ${violationThreshold.value} seconds.`, 'violation');
+
+                // Simulate capturing video frame
+                const canvas = document.getElementById(`${lane}-canvas`);
+                const imageData = canvas.toDataURL('image/png');
+
+                // Save violation to storage
+                storageService.saveViolation(lane, 'non_moving_vehicle', imageData)
+                    .then(violation => {
+                        console.log('Violation saved:', violation);
+                    })
+                    .catch(error => {
+                        console.error('Error saving violation:', error);
+                    });
+            }
+
+            function handleAccident(lane) {
+                logMessage(`ALERT: Accident detected in ${lane.toUpperCase()}!`, 'emergency');
+
+                // Make emergency call for accident
+                twilioService.makeEmergencyCall(
+                    `Accident detected at ${lane}. Emergency assistance required.`
+                );
+
+                // Capture and save accident footage
+                const canvas = document.getElementById(`${lane}-canvas`);
+                const imageData = canvas.toDataURL('image/png');
+
+                // Save accident record to storage
+                storageService.saveViolation(lane, 'accident', imageData)
+                    .then(violation => {
+                        console.log('Accident record saved:', violation);
+                    })
+                    .catch(error => {
+                        console.error('Error saving accident record:', error);
+                    });
+
+                // Send notification to authorities
+                twilioService.sendNotification(
+                    `URGENT: Traffic accident detected at intersection, ${lane}. Timestamp: ${new Date().toLocaleTimeString()}`
+                );
+            }
+
+            function simulateAccidentIfNeeded(lane) {
+                handleAccident(lane);
+            }
+
+            function logMessage(message, type = '') {
+                const logEntry = document.createElement('div');
+                logEntry.className = 'log-entry';
+
+                if (type) {
+                    logEntry.classList.add(type);
+                }
+
+                logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+
+                logMessages.insertBefore(logEntry, logMessages.firstChild);
+
+                // Limit log entries to 50
+                if (logMessages.children.length > 50) {
+                    logMessages.removeChild(logMessages.lastChild);
+                }
+            }
+
+            // Traffic signal automation
+            setInterval(() => {
+                // Implement intelligent traffic signal automation based on vehicle counts
+                // This would normally use the LSTM model for predictions
+                // For demo purposes, we'll just toggle signals every 30 seconds
+                const lane1Results = state.lane1.detectionResults;
+                const lane2Results = state.lane2.detectionResults;
+
+                // Skip if videos aren't playing
+                if (!state.lane1.videoPlaying && !state.lane2.videoPlaying) return;
+
+                // Skip if there's an emergency vehicle (handled separately)
+                if ((lane1Results && lane1Results.hasEmergencyVehicle) ||
+                    (lane2Results && lane2Results.hasEmergencyVehicle)) return;
+
+                // Skip if there's an accident (handled separately)
+                if ((lane1Results && lane1Results.hasAccident) ||
+                    (lane2Results && lane2Results.hasAccident)) return;
+
+                // Toggle traffic signals
+                if (state.lane1.signalState === 'green') {
+                    updateSignals('lane1', 'red');
+                    updateSignals('lane2', 'green');
+                    logMessage('Automated signal change: Lane 1 RED, Lane 2 GREEN');
+                } else {
+                    updateSignals('lane1', 'green');
+                    updateSignals('lane2', 'red');
+                    logMessage('Automated signal change: Lane 1 GREEN, Lane 2 RED');
+                }
+            }, 30000); // Every 30 seconds
+
+            // Check for application settings changes
+            document.getElementById('emergency-contact').addEventListener('change', function() {
+                logMessage(`Emergency contact updated to: ${this.value}`);
+            });
+
+            document.getElementById('violation-threshold').addEventListener('change', function() {
+                logMessage(`Non-moving vehicle threshold updated to: ${this.value} seconds`);
+            });
+
+            // Initialize with a welcome log message
+            logMessage('AI Traffic Management System initialized');
+            logMessage('Upload traffic videos to begin monitoring');
+        });
+    </script>
+</body>
+</html>

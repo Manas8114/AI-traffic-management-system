@@ -1,0 +1,13 @@
+
+--- New Session Started: 2025-04-29 17:31:55.671647 ---
+
+--- New Session Started: 2025-04-29 17:33:08.963351 ---
+[20250429_173311] Detected plate: YTNY
+[20250429_173312] Detected plate: YTNBSEW
+[20250429_173312] Detected plate: YTNEFO
+[20250429_173312] Detected plate: YTNSSFE
+[20250429_173312] Detected plate: TTNSEF
+[20250429_173313] Detected plate: TTNSFD
+[20250429_173315] Detected plate: TNSSE
+
+--- New Session Started: 2025-04-29 17:45:16.632883 ---
