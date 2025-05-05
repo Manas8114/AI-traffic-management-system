@@ -4,12 +4,14 @@ This system uses computer vision and machine learning to monitor traffic, detect
 
 ## Features
 
-- Real-time vehicle detection and tracking
-- Traffic density analysis
-- Incident detection (stopped vehicles, congestion)
-- Adaptive traffic light control
-- Traffic flow prediction
-- Web-based monitoring dashboard
+-Real-time vehicle detection and tracking
+-Traffic density analysis with heatmap visualization
+-Incident detection (stopped vehicles, accidents, congestion)
+-Adaptive traffic light control with AI optimization
+-Traffic flow prediction using LSTM neural networks
+-Web-based monitoring dashboard with multi-camera support
+-Automated alerts and emergency services notification
+-Historical data analysis and reporting
 
 ## Requirements
 
@@ -19,6 +21,8 @@ This system uses computer vision and machine learning to monitor traffic, detect
 - TensorFlow
 - MongoDB (optional)
 - Twilio (optional, for alerts)
+- Docker (optional, for containerized deployment)
+- Redis (real-time caching)
 
 ## Installation
 
