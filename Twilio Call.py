@@ -4,8 +4,8 @@
 from twilio.rest import Client
 
 # Your Account SID and Auth Token from twilio.com/console
-account_sid = 'SK102e5093ad0e6e72c148de88271b2a59'
-auth_token = '79T1WCe9GHlhfpThlYkt1NfSmcNYveB1'
+account_sid = ''
+auth_token = ''
 client = Client(account_sid, auth_token)
 
 # Function to make a phone call
